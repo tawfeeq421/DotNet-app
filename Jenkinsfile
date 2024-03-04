@@ -54,7 +54,7 @@ pipeline{
         }
         stage("TRIVY"){
             steps{
-                sh "trivy image sevenajay/dotnet-monitoring:latest > trivy.txt"
+                sh "trivy image tawfeeq421/dotnet:V1 > trivy.txt"
             }
         }
         stage("Docker Push"){
@@ -68,17 +68,9 @@ pipeline{
         }
         stage("Deploy to container"){
             steps{
-                sh "docker run -d --name dotnet -p 5000:5000 sevenajay/dotnet-monitoring:latest"
+                sh "docker run -d --name dotnet -p 5000:5000 tawfeeq421/dotnet:V1"
             }
         }
-        stage('Deploy to k8s'){
-            steps{
-                dir('K8S') {
-                  withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'k8s', namespace: '', restrictKubeConfigAccess: false, serverUrl: '') {
-                    sh 'kubectl apply -f deployment.yaml'
-                   }
-                }
-            }
-        }
+        
     }
 }
