@@ -62,6 +62,27 @@ pipeline {
                 '''
             }
         }
+        stage('Docker Build'){
+            steps{
+                def app = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}", ".")
+            }
+        }
+        stage(Scan Image and Push){
+            stage{
+                sh """
+                trivy image \
+                --severity HIGH,CRITICAL \
+                --format table \
+                --no-progress \
+                -o trivy-image-report \
+                ${DOCKER_IMAGE}:${DOCKER_TAG}
+                """
+                docker.withRegistry('https://index.docker.io/v1', 'docker-cred'){
+                    app.push()
+                    app.push('latest')
+                }
+            }
+        }
     }
     post{
         always{
