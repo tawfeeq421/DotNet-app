@@ -1,76 +1,29 @@
-pipeline{
-    agent any
+pipeline {
+    agent any 
     tools{
-        jdk 'jdk17'
+        jdk 'JDK17'
     }
-    environment {
-        SCANNER_HOME=tool 'sonar-scanner'
+    environment{
+        SONAR_HOME= tool 'sonar'
+        DOCKER_IMAGE = "tawfeeq421/dotnet"
+        DOCKER_TAG = "${BUILD_NUMBER}"
     }
-    stages {
-        stage('clean workspace'){
+    stages{
+        stage('Clean Workspace'){
             steps{
                 cleanWs()
             }
         }
-        stage('Checkout From Git'){
+        stage('Checkout SCM'){
             steps{
                 git branch: 'main', url: 'https://github.com/tawfeeq421/DotNet-app.git'
             }
         }
-        stage("Sonarqube Analysis "){
+        stage('Build'){
             steps{
-                withSonarQubeEnv('sonar-server') {
-                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Dotnet-Webapp \
-                    -Dsonar.projectKey=Dotnet-Webapp '''
-                }
+                sh 'dotnet restore src/dotnet-demoapp.csproj'
+                sh 'dotnet build src/dotnet-demoapp.csproj'
             }
         }
-        stage("quality gate"){
-           steps {
-                script {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token'
-                }
-            }
-        }
-        stage("TRIVY File scan"){
-            steps{
-                sh "trivy fs . > trivy-fs_report.txt"
-            }
-        }
-        stage("OWASP Dependency Check"){
-            steps{
-                dependencyCheck additionalArguments: '--scan ./ --format XML ', odcInstallation: 'DP-Check'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
-            }
-        }
-        stage("Docker Build & tag"){
-            steps{
-                script{
-                   withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){
-                       sh "make image"
-                    }
-                }
-            }
-        }
-        stage("TRIVY"){
-            steps{
-                sh "trivy image tawfeeq421/dotnet:V1 > trivy.txt"
-            }
-        }
-        stage("Docker Push"){
-            steps{
-                script{
-                   withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){
-                       sh "make push"
-                    }
-                }
-            }
-        }
-        stage("Deploy to container"){
-            steps{
-                sh "docker run -d --name dotnet -p 5000:5000 tawfeeq421/dotnet:V1"
-            }
-        }
-        
     }
 }
