@@ -36,10 +36,15 @@ pipeline {
         stage('SonarQube Scan'){
             steps{
                 sh"""
-                ${SCANNER_HOME}/bin/sonar-scanner \
+                ${SONAR_HOME}/bin/sonar-scanner \
                 -Dsonar.projectName=dotnet \
                 -Dsonar.projectKey=dotnet
                 """
+            }
+        }
+        stage('Quality Gate'){
+            steps{
+
             }
         }
     }
