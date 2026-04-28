@@ -67,7 +67,7 @@ pipeline {
                 def app = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}", ".")
             }
         }
-        stage(Scan Image and Push){
+        stage('can Image and Push'){
             stage{
                 sh """
                 trivy image \
