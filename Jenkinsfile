@@ -65,7 +65,7 @@ pipeline {
         stage('Docker Build'){
             steps{
                 script{
-                    def app = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}", ".")
+                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}", ".")
                 }
             }
         }
@@ -81,8 +81,8 @@ pipeline {
                     ${DOCKER_IMAGE}:${DOCKER_TAG}
                     """
                     docker.withRegistry('https://index.docker.io/v1', 'docker-cred'){
-                        app.push()
-                        app.push('latest')
+                        docker.image("${DOCKER_IMAGE}:${DOCKER_TAG}").push()
+                        docker.image("${DOCKER_IMAGE}:${DOCKER_TAG}").push('latest')
                 }
                 }
             }
