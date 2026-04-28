@@ -44,8 +44,40 @@ pipeline {
         }
         stage('Quality Gate'){
             steps{
-
+                timeout(time: 1, unit: 'HOURS'){
+                    waitForQualityGate abortPipeline: true
+                }
             }
+        }
+        stage('Trivy FS Scan'){
+            steps{
+                sh '''
+                trivy fs . \
+                --severity HIGH,CRITICAL \
+                --format table \
+                --no-progress \
+                -o trivy-report.txt
+                '''
+            }
+        }
+    }
+    post{
+        always{
+            archiveArtifacts artifacts: 'trivy-report.txt' fingerprint: true
+        }
+        success{
+            slackSend(
+                channel: "#amazon",
+                color: "good",
+                message: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}\nCheck ${env.BUILD_URL}"
+            )
+        }
+        failure{
+            slackSend(
+                channel: "#amazon",
+                color: "danger",
+                message: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n See Logs ${env.BUILD_URL}"
+            )
         }
     }
 }
