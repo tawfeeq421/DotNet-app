@@ -25,5 +25,13 @@ pipeline {
                 sh 'dotnet build src/dotnet-demoapp.csproj'
             }
         }
+        stage('Unit Test'){
+            steps{
+                sh '''
+                dotnet test tests/tests.csproj \
+                --logger "trx;LogFileName=test-results.trx"
+                '''
+            }
+        }
     }
 }
