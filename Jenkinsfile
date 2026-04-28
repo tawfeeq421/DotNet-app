@@ -35,11 +35,13 @@ pipeline {
         }
         stage('SonarQube Scan'){
             steps{
+                withSonarQubeEnv('sonarserver'){
                 sh"""
                 ${SONAR_HOME}/bin/sonar-scanner \
                 -Dsonar.projectName=dotnet \
                 -Dsonar.projectKey=dotnet
                 """
+                }
             }
         }
         stage('Quality Gate'){
