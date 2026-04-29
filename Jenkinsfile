@@ -5,7 +5,7 @@ pipeline {
     }
     environment{
         SONAR_HOME= tool 'sonar'
-        DOCKER_IMAGE = "tawfeeq421/dotnetapp"
+        DOCKER_IMAGE = "tawfeeq421/dotnet"
         DOCKER_TAG = "${BUILD_NUMBER}"
     }
     stages{
