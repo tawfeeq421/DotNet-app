@@ -4,7 +4,7 @@ pipeline {
         jdk 'JDK17'
     }
     environment{
-        SONAR_HOME = tool 'sonar'
+        SONAR_HOME= tool 'sonar'
         DOCKER_IMAGE = "tawfeeq421/dotnetapp"
         DOCKER_TAG = "${BUILD_NUMBER}"
     }
