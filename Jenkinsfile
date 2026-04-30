@@ -4,7 +4,7 @@ pipeline {
         jdk 'JDK17'
     }
     environment{
-        SONAR_HOME= tool 'sonar'
+        SONAR_HOME = tool 'sonar'
         DOCKER_IMAGE = "tawfeeq421/dotnetapp"
         DOCKER_TAG = "${BUILD_NUMBER}"
     }
@@ -36,11 +36,11 @@ pipeline {
         stage('SonarQube Scan'){
             steps{
                 withSonarQubeEnv('sonarserver'){
-                sh"""
-                ${SONAR_HOME}/bin/sonar-scanner \
-                -Dsonar.projectName=dotnet \
-                -Dsonar.projectKey=dotnet
-                """
+                    sh """
+                    ${SONAR_HOME}/bin/sonar-scanner \
+                    -Dsonar.projectName=dotnet \
+                    -Dsonar.projectKey=dotnet
+                    """
                 }
             }
         }
@@ -64,33 +64,43 @@ pipeline {
         }
         stage('Docker Build'){
             steps{
-                script{
-                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}", ".")
-                }
+                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
             }
         }
-        stage('Scan Image and Push'){
+        stage('Trivy Image Scan'){
             steps{
-                script{
-                    sh """
-                    trivy image \
-                    --severity HIGH,CRITICAL \
-                    --format table \
-                    --no-progress \
-                    -o trivy-image-report \
-                    ${DOCKER_IMAGE}:${DOCKER_TAG}
-                    """
-                    docker.withRegistry('https://index.docker.io/v1', 'docker-cred'){
-                        docker.image("${DOCKER_IMAGE}:${DOCKER_TAG}").push()
-                        docker.image("${DOCKER_IMAGE}:${DOCKER_TAG}").push('latest')
-                }
+                sh """
+                trivy image \
+                --severity HIGH,CRITICAL \
+                --format table \
+                --no-progress \
+                -o trivy-image-report.txt \
+                ${DOCKER_IMAGE}:${DOCKER_TAG}
+                """
+            }
+        }
+        stage('Docker Push'){
+            steps{
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-cred',
+                    usernameVariable: 'USER',
+                    passwordVariable: 'PASS'
+                )]){
+                    sh '''
+                    echo $PASS | docker login -u $USER --password-stdin
+
+                    docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+
+                    docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
+                    docker push ${DOCKER_IMAGE}:latest
+                    '''
                 }
             }
         }
     }
     post{
         always{
-            archiveArtifacts artifacts: 'trivy-report.txt', fingerprint: true
+            archiveArtifacts artifacts: 'trivy-report.txt, trivy-image-report.txt', fingerprint: true
         }
         success{
             slackSend(
